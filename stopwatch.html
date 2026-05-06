@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wahab TickTock Timer | Stopwatch & Timer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&family=Orbitron:wght@500;700&family=VT323&family=Nunito:wght@900&display=swap" rel="stylesheet">
+</head>
+<body class="theme-minimalist" data-page="stopwatch">
+    <div class="app-wrapper">
+        
+        <!-- Global Navigation Bar -->
+        <nav class="nav-bar">
+            <div class="nav-brand">
+                <img src="logo.png" alt="Clock Logo" class="brand-logo">
+                <span class="brand-text">Wahab TickTock Timer</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="stopwatch.html" class="nav-link active">Stopwatch</a>
+                <a href="about.html" class="nav-link">About</a>
+            </div>
+            
+            <div class="settings-menu">
+                <label for="theme-selector" class="sr-only">Choose a Theme</label>
+                <select id="theme-selector" class="theme-selector">
+                    <option value="theme-minimalist">Minimalist</option>
+                    <option value="theme-cyberpunk">Cyberpunk</option>
+                    <option value="theme-retro">Retro</option>
+                </select>
+            </div>
+        </nav>
+
+        <!-- Main Content Area: Multi-tool Layout -->
+        <main class="app-container multi-tool">
+            
+            <!-- 1. Stopwatch Section -->
+            <div class="tool-section clock-wrapper">
+                <h2>Stopwatch</h2>
+                <div class="time-display" id="stopwatch-display">00:00.00</div>
+                <div class="controls">
+                    <button id="sw-start" class="btn">Start</button>
+                    <button id="sw-stop" class="btn">Stop</button>
+                    <button id="sw-reset" class="btn">Reset</button>
+                </div>
+            </div>
+
+            <!-- 2. Countdown Timer Section -->
+            <div class="tool-section clock-wrapper">
+                <h2>Countdown Timer</h2>
+                <div class="timer-inputs">
+                    <input type="number" id="timer-m" placeholder="Min" min="0" max="60" class="time-input">
+                    <input type="number" id="timer-s" placeholder="Sec" min="0" max="59" class="time-input">
+                </div>
+                <div class="time-display" id="timer-display">00:00</div>
+                <div class="controls">
+                    <button id="timer-start" class="btn">Start</button>
+                    <button id="timer-stop" class="btn">Stop</button>
+                    <button id="timer-reset" class="btn">Reset</button>
+                </div>
+            </div>
+
+            <!-- 3. Study Focus Tracker -->
+            <div class="tool-section clock-wrapper study-tracker">
+                <div id="study-mode-indicator" class="mode-indicator mode-study">Study Time</div>
+                <div class="time-display" id="study-display">25:00</div>
+                <div class="controls">
+                    <button id="study-start" class="btn">Start Focus</button>
+                    <button id="study-reset" class="btn">Reset</button>
+                </div>
+                <div class="session-dots" id="session-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+
+        </main>
+        
+        <!-- Global Footer -->
+        <footer class="bottom-bar">
+            <p>Abdul Wahab | Ph: 01850996152 | Address: Lohagara, Chittagong</p>
+            <p class="footer-quote">Save the Time and Time will Save You: & WahabTickTockTimer is for U(SRT)</p>
+        </footer>
+
+    </div>
+    
+    <!-- Shared Application Logic -->
+    <script src="script.js"></script>
+</body>
+</html>

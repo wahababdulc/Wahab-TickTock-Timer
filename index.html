@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WahabTickTockTimer | Home</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts for diverse typography across themes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&family=Orbitron:wght@500;700&family=VT323&family=Nunito:wght@900&display=swap" rel="stylesheet">
+</head>
+<body class="theme-minimalist" data-page="home">
+    <canvas id="magic-canvas"></canvas>
+    <div class="app-wrapper">
+        
+        <!-- Global Navigation Bar -->
+        <nav class="nav-bar">
+            <div class="nav-brand">
+                <img src="logo.png" alt="Clock Logo" class="brand-logo">
+                <span class="brand-text">Wahab TickTock Timer</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link active">Home</a>
+                <a href="stopwatch.html" class="nav-link">Stopwatch</a>
+                <a href="about.html" class="nav-link">About</a>
+            </div>
+            
+            <!-- Global Settings Menu -->
+            <div class="settings-menu">
+                <label for="theme-selector" class="sr-only">Choose a Theme</label>
+                <select id="theme-selector" class="theme-selector">
+                    <option value="theme-minimalist">Minimalist</option>
+                    <option value="theme-cyberpunk">Cyberpunk</option>
+                    <option value="theme-retro">Retro</option>
+                </select>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="app-container">
+            <div class="clock-wrapper">
+                <div class="time-display">
+                    <span id="hours">00</span>
+                    <span class="colon">:</span>
+                    <span id="minutes">00</span>
+                    <span class="colon">:</span>
+                    <span id="seconds">00</span>
+                    <span id="period">AM</span>
+                </div>
+                <div class="date-display">
+                    <span id="day-name">Day</span>, 
+                    <span id="month">Month</span> 
+                    <span id="day-number">00</span>, 
+                    <span id="year">0000</span>
+                </div>
+                
+                <!-- Alarm Section -->
+                <div class="alarm-section">
+                    <div class="alarm-inputs">
+                        <input type="time" id="alarm-time" class="alarm-input" required>
+                        <select id="alarm-tone" class="alarm-select">
+                            <option value="beep">Classic Beep</option>
+                            <option value="chime">Soft Chime</option>
+                            <option value="siren">Digital Siren</option>
+                            <option value="custom">Custom Music</option>
+                        </select>
+                        <input type="file" id="custom-audio-input" accept="audio/*" class="custom-audio-hidden" style="display: none;">
+                        <button id="alarm-btn" class="btn">Set Alarm</button>
+                    </div>
+                    <div id="alarm-status" class="alarm-status">Alarm not set</div>
+                </div>
+            </div>
+            
+            <!-- 3D Tilt Profile Card -->
+            <div class="hero-image-container">
+                <div class="tilt-card" id="tilt-card">
+                    <img src="profile-animated.jpg" alt="Animated Profile">
+                    <div class="glare" id="glare"></div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Global Footer -->
+        <footer class="bottom-bar">
+            <p>Abdul Wahab | Ph: 01850996152 | Address: Lohagara, Chittagong</p>
+            <p class="footer-quote">Time and Tide Wait for None; Here WahabTickTockTimer is a Gift for it </p>
+        </footer>
+
+    </div>
+    
+    <!-- Shared Application Logic -->
+    <script src="script.js"></script>
+</body>
+</html>

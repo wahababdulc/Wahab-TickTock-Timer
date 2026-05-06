@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wahab TickTock Timer | About</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&family=Orbitron:wght@500;700&family=VT323&family=Nunito:wght@900&display=swap" rel="stylesheet">
+</head>
+<body class="theme-minimalist" data-page="about">
+    <div class="app-wrapper">
+        
+        <!-- Global Navigation Bar -->
+        <nav class="nav-bar">
+            <div class="nav-brand">
+                <img src="logo.png" alt="Clock Logo" class="brand-logo">
+                <span class="brand-text">WahabTickTockTimer</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="stopwatch.html" class="nav-link">Stopwatch</a>
+                <a href="about.html" class="nav-link active">About</a>
+            </div>
+            
+            <div class="settings-menu">
+                <label for="theme-selector" class="sr-only">Choose a Theme</label>
+                <select id="theme-selector" class="theme-selector">
+                    <option value="theme-minimalist">Minimalist</option>
+                    <option value="theme-cyberpunk">Cyberpunk</option>
+                    <option value="theme-retro">Retro</option>
+                </select>
+            </div>
+        </nav>
+
+        <!-- Main Content Area: About Page -->
+        <main class="app-container">
+            <div class="clock-wrapper about-section">
+                <div class="profile-container">
+                    <img src="profile.jpg" alt="Abdul Wahab" class="profile-image">
+                </div>
+                <h2>About Me</h2>
+                <p>Hi, I am Abdul Wahab, an undergraduate CSE student. I am quite interested in web development and creating software.</p>
+                <p>Although I am a beginner, I am highly motivated to learn and build amazing things.</p>
+                <p class="proverb">The expert in anything was once a beginner.</p>
+            </div>
+        </main>
+        
+        <!-- Global Footer -->
+        <footer class="bottom-bar">
+            <p>Abdul Wahab | Ph: 01850996152 | Address: Lohagara, Chittagong </p>
+            <p class="footer-quote"> First, solve the problem. Then Set the Goal </p>
+        </footer>
+
+    </div>
+    
+    <!-- Shared Application Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
