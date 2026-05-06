@@ -265,9 +265,27 @@ if (hoursElement) {
             alarmBtn.textContent = 'Clear Alarm';
             alarmStatus.textContent = `Alarm set for ${alarmTime}`;
             
-            // Resume AudioContext just in case browser requires user gesture
+            // --- Mobile Browser Audio Unlock Workaround ---
+            // 1. Unlock Web Audio API (for beep/chime/siren)
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
+            const unlockOsc = audioCtx.createOscillator();
+            const unlockGain = audioCtx.createGain();
+            unlockGain.gain.value = 0; // Completely silent
+            unlockOsc.connect(unlockGain);
+            unlockGain.connect(audioCtx.destination);
+            unlockOsc.start();
+            unlockOsc.stop(audioCtx.currentTime + 0.01);
+
+            // 2. Unlock HTML5 Audio (for custom music)
+            if (!customAudioElement) {
+                customAudioElement = new Audio();
+            }
+            // Silent base64 WAV to force browser to grant audio playback rights
+            customAudioElement.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+            customAudioElement.play().then(() => {
+                customAudioElement.pause();
+            }).catch(e => console.log('Audio unlock skipped:', e));
         }
     });
 
