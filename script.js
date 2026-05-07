@@ -89,6 +89,44 @@ if (hoursElement) {
     // Utility: Pad numbers with zero (e.g., 9 -> '09') using string methods
     const padZero = (num) => num.toString().padStart(2, '0');
 
+    const normalizeAlarmTime = (rawValue) => {
+        if (!rawValue || typeof rawValue !== 'string') return null;
+        const value = rawValue.trim().replace(/\s*:\s*/g, ':');
+
+        // Standard 24-hour time string
+        const time24 = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+        const match24 = value.match(time24);
+        if (match24) {
+            return `${match24[1].padStart(2, '0')}:${match24[2]}`;
+        }
+
+        // 12-hour time string with AM/PM
+        const time12 = /^(1[0-2]|0?[1-9]):([0-5]\d)\s*([AaPp][Mm])$/;
+        const match12 = value.match(time12);
+        if (match12) {
+            let hour = parseInt(match12[1], 10);
+            const minute = match12[2];
+            const period = match12[3].toUpperCase();
+            if (period === 'AM' && hour === 12) {
+                hour = 0;
+            } else if (period === 'PM' && hour !== 12) {
+                hour += 12;
+            }
+            return `${hour.toString().padStart(2, '0')}:${minute}`;
+        }
+
+        return null;
+    };
+
+    const formatAlarmDisplay = (timeValue) => {
+        if (!timeValue) return '';
+        const [hours, minutes] = timeValue.split(':');
+        const parsedHours = parseInt(hours, 10);
+        const displayHours = (parsedHours % 12) || 12;
+        const period = parsedHours >= 12 ? 'PM' : 'AM';
+        return `${displayHours}:${minutes} ${period}`;
+    };
+
     // --- IndexedDB for Custom Audio ---
     const DB_NAME = 'ChronoCanvasDB';
     const STORE_NAME = 'AudioStore';
@@ -144,10 +182,26 @@ if (hoursElement) {
     
     let alarmTime = localStorage.getItem('alarmTime') || null;
     let alarmTone = localStorage.getItem('alarmTone') || 'beep';
+    let alarmLastRungDate = localStorage.getItem('lastRungDate') || null;
     let isAlarmRinging = false;
     let alarmInterval = null;
     let autoShutoffTimeout = null;
     let customAudioElement = null;
+
+    const updateAlarmButtonLabel = () => {
+        if (!alarmTime) {
+            alarmBtn.textContent = 'Set Alarm';
+            return;
+        }
+
+        const selectedTime = normalizeAlarmTime(alarmTimeInput.value);
+        const selectedTone = alarmToneSelect.value;
+        if (selectedTime && (selectedTime !== alarmTime || selectedTone !== alarmTone)) {
+            alarmBtn.textContent = 'Update Alarm';
+        } else {
+            alarmBtn.textContent = 'Clear Alarm';
+        }
+    };
 
     // Initialize UI on load if alarm is set
     if (alarmTime) {
@@ -155,14 +209,12 @@ if (hoursElement) {
         alarmToneSelect.value = alarmTone;
         if (alarmTone === 'custom') customAudioInput.style.display = 'block';
         alarmBtn.textContent = 'Clear Alarm';
-        const [hours, mins] = alarmTime.split(':');
-        const displayHours = (parseInt(hours) % 12) || 12;
-        const period = parseInt(hours) >= 12 ? 'PM' : 'AM';
-        alarmStatus.textContent = `Alarm set for ${displayHours}:${mins} ${period}`;
+        alarmStatus.textContent = `The Alarm Set at ${formatAlarmDisplay(alarmTime)}`;
     }
 
     alarmToneSelect.addEventListener('change', (e) => {
         customAudioInput.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        updateAlarmButtonLabel();
     });
 
     customAudioInput.addEventListener('change', async (e) => {
@@ -172,6 +224,8 @@ if (hoursElement) {
             alert('Custom audio saved successfully!');
         }
     });
+
+    alarmTimeInput.addEventListener('input', updateAlarmButtonLabel);
 
     const setupShutoff = () => {
         // 3-Minute Auto Shutoff (180,000 ms)
@@ -275,6 +329,7 @@ if (hoursElement) {
             // Cancel ringing
             if (typeof window.stopTone === 'function') window.stopTone();
             alarmTime = null;
+            alarmLastRungDate = null;
             localStorage.removeItem('alarmTime');
             localStorage.removeItem('lastRungDate');
             alarmBtn.textContent = 'Set Alarm';
@@ -282,30 +337,50 @@ if (hoursElement) {
             return;
         }
 
+        const selectedTime = normalizeAlarmTime(alarmTimeInput.value);
+        const selectedTone = alarmToneSelect.value;
+        if (!selectedTime) {
+            alarmStatus.textContent = 'Please select a valid time!';
+            return;
+        }
+
+        if (alarmTime && (selectedTime !== alarmTime || selectedTone !== alarmTone)) {
+            // Update an existing alarm when time or tone changes
+            alarmTime = selectedTime;
+            alarmTone = selectedTone;
+            localStorage.setItem('alarmTime', alarmTime);
+            localStorage.setItem('alarmTone', alarmTone);
+            localStorage.removeItem('lastRungDate');
+            alarmLastRungDate = null;
+
+            alarmBtn.textContent = 'Clear Alarm';
+            alarmStatus.textContent = `The Alarm Updated to ${formatAlarmDisplay(alarmTime)}`;
+            return;
+        }
+
         if (alarmTime) {
             // Unset alarm
             alarmTime = null;
+            alarmLastRungDate = null;
             localStorage.removeItem('alarmTime');
             localStorage.removeItem('lastRungDate');
             alarmBtn.textContent = 'Set Alarm';
             alarmStatus.textContent = 'Alarm cleared';
         } else {
             // Set alarm
-            if (!alarmTimeInput.value) {
-                alarmStatus.textContent = 'Please select a time!';
+            if (!selectedTime) {
+                alarmStatus.textContent = 'Please select a valid time!';
                 return;
             }
-            alarmTime = alarmTimeInput.value;
-            alarmTone = alarmToneSelect.value;
+            alarmTime = selectedTime;
+            alarmTone = selectedTone;
             localStorage.setItem('alarmTime', alarmTime);
             localStorage.setItem('alarmTone', alarmTone);
             localStorage.removeItem('lastRungDate');
+            alarmLastRungDate = null;
             
             alarmBtn.textContent = 'Clear Alarm';
-            const [hours, mins] = alarmTime.split(':');
-            const displayHours = (parseInt(hours) % 12) || 12;
-            const period = parseInt(hours) >= 12 ? 'PM' : 'AM';
-            alarmStatus.textContent = `Alarm set for ${displayHours}:${mins} ${period}`;
+            alarmStatus.textContent = `The Alarm Set at ${formatAlarmDisplay(alarmTime)}`;
             
             // --- Mobile Browser Audio Unlock Workaround ---
             globalAudioUnlock(); // Ensure audio is unlocked
@@ -322,6 +397,32 @@ if (hoursElement) {
         }
     });
 
+    const shouldRingAlarm = () => {
+        if (!alarmTime || isAlarmRinging) return false;
+        const now = new Date();
+        const currentTime = `${padZero(now.getHours())}:${padZero(now.getMinutes())}`;
+        if (currentTime !== alarmTime) return false;
+        const todayKey = now.toISOString().slice(0, 10);
+        if (alarmLastRungDate === todayKey) return false;
+        alarmLastRungDate = todayKey;
+        localStorage.setItem('lastRungDate', todayKey);
+        return true;
+    };
+
+    const triggerAlarmIfNeeded = () => {
+        if (shouldRingAlarm()) {
+            isAlarmRinging = true;
+            clockWrapper.classList.add('alarm-active-ring');
+            alarmStatus.textContent = `Alarm ringing: ${formatAlarmDisplay(alarmTime)}`;
+            window.playTone(alarmTone);
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification('Wahab TickTock Timer', {
+                    body: `Alarm for ${formatAlarmDisplay(alarmTime)} is ringing!`,
+                    silent: true
+                });
+            }
+        }
+    };
 
     // --- End Alarm Logic ---
 
@@ -346,6 +447,7 @@ if (hoursElement) {
         monthElement.textContent = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(now);
         dayNumberElement.textContent = now.getDate();
         yearElement.textContent = now.getFullYear();
+        triggerAlarmIfNeeded();
     };
 
     // Run once immediately to avoid 1-second delay, then set interval
@@ -958,7 +1060,7 @@ setInterval(() => {
                             const [h, m] = aTime.split(':');
                             const dh = (parseInt(h) % 12) || 12;
                             const p = parseInt(h) >= 12 ? 'PM' : 'AM';
-                            status.textContent = `Alarm set for ${dh}:${m} ${p}`;
+                            status.textContent = `The Alarm Set at ${dh}:${m} ${p}`;
                         }
                     }
                     if (cw) cw.classList.remove('alarm-active-ring');

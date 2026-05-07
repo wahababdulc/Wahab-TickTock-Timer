@@ -270,9 +270,13 @@ body {
     display: flex;
     align-items: baseline;
     justify-content: center;
-    color: var(--digit-color);
+    background: linear-gradient(90deg, #000, #333, #000);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: swim-text 4s linear infinite;
     font-family: var(--digit-font);
-    text-shadow: var(--clock-glow);
+    text-shadow: none;
     transition: color 0.3s ease;
     font-variant-numeric: tabular-nums;
 }
@@ -286,7 +290,11 @@ body {
 .colon {
     animation: blink 1s step-end infinite;
     margin: 0 0.5rem;
-    color: var(--accent-color);
+    background: linear-gradient(90deg, #000, #333, #000);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: swim-text 4s linear infinite;
 }
 
 #period {
@@ -768,8 +776,8 @@ body.swim-mode .hero-image-container {
 
 body.swim-mode .time-display,
 body.swim-mode .date-display {
-    /* Fluid beautiful yellow gradient for digits and date */
-    background: linear-gradient(90deg, #ffd700, #fa0, #ffea00, #ffd700);
+    /* Fluid beautiful black gradient for digits and date */
+    background: linear-gradient(90deg, #000, #333, #000);
     background-size: 200% auto;
     background-clip: text;
     -webkit-text-fill-color: transparent;
