@@ -587,6 +587,9 @@ if (swDisplay) {
         } else {
             document.getElementById('study-start').textContent = isStudyMode ? (studyRemaining < STUDY_MINS*60 ? 'Resume Focus' : 'Start Focus') : (studyRemaining < BREAK_MINS*60 ? 'Resume Break' : 'Start Break');
         }
+
+        // --- SYNC ZEN MODE ---
+        if (typeof window.toggleZenMode === 'function') window.toggleZenMode(isStudyMode && isStudyRunning);
     };
 
     const runStudyInterval = () => {
@@ -760,3 +763,92 @@ if (canvas) {
         }, 2000); // wait for 2s CSS fade transition
     }, 20000);
 }
+
+// ==========================================
+// 5. Zen Water Ripples Background Feature
+// ==========================================
+const zenCanvas = document.getElementById('zen-canvas');
+let zenCtx, rippleArray = [], rippleAnimationId;
+
+if (zenCanvas) {
+    zenCtx = zenCanvas.getContext('2d');
+    
+    const resizeZenCanvas = () => {
+        zenCanvas.width = window.innerWidth;
+        zenCanvas.height = window.innerHeight;
+    };
+    resizeZenCanvas();
+    window.addEventListener('resize', resizeZenCanvas);
+
+    class Ripple {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 1;
+            this.opacity = 0.6;
+            this.expansionRate = Math.random() * 1.5 + 0.5;
+        }
+        update() {
+            this.radius += this.expansionRate;
+            this.opacity -= 0.008; // Controls how long the ripple lasts
+        }
+        draw() {
+            zenCtx.beginPath();
+            zenCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            zenCtx.strokeStyle = `rgba(100, 200, 255, ${Math.max(this.opacity, 0)})`;
+            zenCtx.lineWidth = 2;
+            zenCtx.shadowBlur = 15;
+            zenCtx.shadowColor = '#64c8ff'; // Glowing blue ripples
+            zenCtx.stroke();
+        }
+    }
+
+    const animateRipples = () => {
+        zenCtx.clearRect(0, 0, zenCanvas.width, zenCanvas.height);
+        for (let i = 0; i < rippleArray.length; i++) {
+            rippleArray[i].update();
+            rippleArray[i].draw();
+            // Remove faded ripples
+            if (rippleArray[i].opacity <= 0) {
+                rippleArray.splice(i, 1);
+                i--;
+            }
+        }
+        rippleAnimationId = requestAnimationFrame(animateRipples);
+    };
+
+    // Track clicks and mouse movement to spawn ripples
+    const createRipple = (e) => {
+        if (!document.body.classList.contains('zen-mode-active')) return;
+        rippleArray.push(new Ripple(e.clientX, e.clientY));
+    };
+
+    window.addEventListener('click', createRipple);
+    window.addEventListener('mousemove', (e) => {
+        // Throttle generation so the screen isn't overwhelmed
+        if (Math.random() > 0.92) createRipple(e);
+    });
+}
+
+// Unified function to start/stop the effect smoothly
+window.toggleZenMode = (isActive) => {
+    if (!zenCanvas) return;
+    if (isActive) {
+        document.body.classList.add('zen-mode-active');
+        zenCanvas.style.opacity = '1';
+        if (!rippleAnimationId) animateRipples();
+    } else {
+        document.body.classList.remove('zen-mode-active');
+        zenCanvas.style.opacity = '0';
+        
+        // Wait for 1.5s CSS fade transition before killing animation
+        setTimeout(() => {
+            if (!document.body.classList.contains('zen-mode-active')) {
+                cancelAnimationFrame(rippleAnimationId);
+                rippleAnimationId = null;
+                rippleArray = [];
+                if(zenCtx) zenCtx.clearRect(0, 0, zenCanvas.width, zenCanvas.height);
+            }
+        }, 1500); 
+    }
+};

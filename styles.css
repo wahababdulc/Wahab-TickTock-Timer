@@ -726,3 +726,33 @@ body.swim-mode .date-display {
     animation: swimText 4s linear infinite;
     text-shadow: none; /* remove original shadow to let gradient shine */
 }
+
+/* ==========================================
+   Zen Water Ripples Mode
+   ========================================== */
+.zen-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Lets clicks pass through to your buttons */
+    z-index: 0; /* Keep it behind your timer elements */
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+}
+
+body.zen-mode-active {
+    background: #0a0f12 !important; /* Deep Zen Garden dark aesthetic */
+    transition: background 1.5s ease-in-out;
+}
+
+body.zen-mode-active .study-tracker {
+    background: rgba(15, 25, 30, 0.6);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(100, 200, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+    color: #e0f0f5;
+    transition: all 1.5s ease-in-out;
+}
