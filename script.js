@@ -6,6 +6,34 @@
  */
 
 // ==========================================
+// 0. Global Mobile Audio Unlock
+// ==========================================
+window.globalAudioCtx = null;
+const globalAudioUnlock = () => {
+    if (!window.globalAudioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) window.globalAudioCtx = new AudioContext();
+    }
+    if (window.globalAudioCtx && window.globalAudioCtx.state === 'suspended') {
+        window.globalAudioCtx.resume();
+    }
+    // Play a silent oscillator to fully unlock
+    if (window.globalAudioCtx) {
+        const osc = window.globalAudioCtx.createOscillator();
+        const gain = window.globalAudioCtx.createGain();
+        gain.gain.value = 0;
+        osc.connect(gain);
+        gain.connect(window.globalAudioCtx.destination);
+        osc.start();
+        osc.stop(window.globalAudioCtx.currentTime + 0.01);
+    }
+    document.removeEventListener('touchstart', globalAudioUnlock);
+    document.removeEventListener('click', globalAudioUnlock);
+};
+document.addEventListener('touchstart', globalAudioUnlock, { once: true });
+document.addEventListener('click', globalAudioUnlock, { once: true });
+
+// ==========================================
 // 1. Global Theme Logic
 // ==========================================
 const themeSelector = document.getElementById('theme-selector');
@@ -117,7 +145,6 @@ if (hoursElement) {
     let alarmTime = localStorage.getItem('alarmTime') || null;
     let alarmTone = localStorage.getItem('alarmTone') || 'beep';
     let isAlarmRinging = false;
-    let audioCtx = null;
     let alarmInterval = null;
     let autoShutoffTimeout = null;
     let customAudioElement = null;
@@ -128,7 +155,10 @@ if (hoursElement) {
         alarmToneSelect.value = alarmTone;
         if (alarmTone === 'custom') customAudioInput.style.display = 'block';
         alarmBtn.textContent = 'Clear Alarm';
-        alarmStatus.textContent = `Alarm set for ${alarmTime}`;
+        const [hours, mins] = alarmTime.split(':');
+        const displayHours = (parseInt(hours) % 12) || 12;
+        const period = parseInt(hours) >= 12 ? 'PM' : 'AM';
+        alarmStatus.textContent = `Alarm set for ${displayHours}:${mins} ${period}`;
     }
 
     alarmToneSelect.addEventListener('change', (e) => {
@@ -148,7 +178,7 @@ if (hoursElement) {
         if (autoShutoffTimeout) clearTimeout(autoShutoffTimeout);
         autoShutoffTimeout = setTimeout(() => {
             if (isAlarmRinging) {
-                stopTone();
+                if (typeof window.stopTone === 'function') window.stopTone();
                 alarmTime = null;
                 localStorage.removeItem('alarmTime');
                 alarmBtn.textContent = 'Set Alarm';
@@ -157,7 +187,7 @@ if (hoursElement) {
         }, 180000);
     };
 
-    const playTone = async (type) => {
+    window.playTone = async (type) => {
         if (alarmInterval) clearInterval(alarmInterval);
 
         if (type === 'custom') {
@@ -176,37 +206,43 @@ if (hoursElement) {
             type = 'beep'; // Fallback
         }
 
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (!window.globalAudioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) window.globalAudioCtx = new AudioContext();
+        }
+        if (window.globalAudioCtx && window.globalAudioCtx.state === 'suspended') {
+            window.globalAudioCtx.resume();
+        }
 
         const triggerSound = () => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
+            if (!window.globalAudioCtx) return;
+            const osc = window.globalAudioCtx.createOscillator();
+            const gain = window.globalAudioCtx.createGain();
             osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            gain.connect(window.globalAudioCtx.destination);
             
             if (type === 'beep') {
                 osc.type = 'square';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(880, window.globalAudioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, window.globalAudioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, window.globalAudioCtx.currentTime + 0.1);
                 osc.start();
-                osc.stop(audioCtx.currentTime + 0.1);
+                osc.stop(window.globalAudioCtx.currentTime + 0.1);
             } else if (type === 'chime') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+                osc.frequency.setValueAtTime(1046.50, window.globalAudioCtx.currentTime);
+                gain.gain.setValueAtTime(0.3, window.globalAudioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, window.globalAudioCtx.currentTime + 1.5);
                 osc.start();
-                osc.stop(audioCtx.currentTime + 1.5);
+                osc.stop(window.globalAudioCtx.currentTime + 1.5);
             } else if (type === 'siren') {
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.4);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                osc.frequency.setValueAtTime(400, window.globalAudioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(800, window.globalAudioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.1, window.globalAudioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, window.globalAudioCtx.currentTime + 0.5);
                 osc.start();
-                osc.stop(audioCtx.currentTime + 0.5);
+                osc.stop(window.globalAudioCtx.currentTime + 0.5);
             }
         };
 
@@ -216,7 +252,7 @@ if (hoursElement) {
         setupShutoff();
     };
 
-    const stopTone = () => {
+    window.stopTone = () => {
         isAlarmRinging = false;
         if (alarmInterval) {
             clearInterval(alarmInterval);
@@ -237,9 +273,10 @@ if (hoursElement) {
     alarmBtn.addEventListener('click', () => {
         if (isAlarmRinging) {
             // Cancel ringing
-            stopTone();
+            if (typeof window.stopTone === 'function') window.stopTone();
             alarmTime = null;
             localStorage.removeItem('alarmTime');
+            localStorage.removeItem('lastRungDate');
             alarmBtn.textContent = 'Set Alarm';
             alarmStatus.textContent = 'Alarm cancelled';
             return;
@@ -249,6 +286,7 @@ if (hoursElement) {
             // Unset alarm
             alarmTime = null;
             localStorage.removeItem('alarmTime');
+            localStorage.removeItem('lastRungDate');
             alarmBtn.textContent = 'Set Alarm';
             alarmStatus.textContent = 'Alarm cleared';
         } else {
@@ -261,21 +299,16 @@ if (hoursElement) {
             alarmTone = alarmToneSelect.value;
             localStorage.setItem('alarmTime', alarmTime);
             localStorage.setItem('alarmTone', alarmTone);
+            localStorage.removeItem('lastRungDate');
             
             alarmBtn.textContent = 'Clear Alarm';
-            alarmStatus.textContent = `Alarm set for ${alarmTime}`;
+            const [hours, mins] = alarmTime.split(':');
+            const displayHours = (parseInt(hours) % 12) || 12;
+            const period = parseInt(hours) >= 12 ? 'PM' : 'AM';
+            alarmStatus.textContent = `Alarm set for ${displayHours}:${mins} ${period}`;
             
             // --- Mobile Browser Audio Unlock Workaround ---
-            // 1. Unlock Web Audio API (for beep/chime/siren)
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const unlockOsc = audioCtx.createOscillator();
-            const unlockGain = audioCtx.createGain();
-            unlockGain.gain.value = 0; // Completely silent
-            unlockOsc.connect(unlockGain);
-            unlockGain.connect(audioCtx.destination);
-            unlockOsc.start();
-            unlockOsc.stop(audioCtx.currentTime + 0.01);
+            globalAudioUnlock(); // Ensure audio is unlocked
 
             // 2. Unlock HTML5 Audio (for custom music)
             if (!customAudioElement) {
@@ -289,32 +322,7 @@ if (hoursElement) {
         }
     });
 
-    let lastRungTimestamp = 0;
 
-    const checkAlarm = (currentHours, currentMinutes) => {
-        if (!alarmTime || isAlarmRinging) return;
-        
-        const currentTimeStr = `${padZero(currentHours)}:${padZero(currentMinutes)}`;
-        // Use a 60-second timestamp buffer to prevent ringing multiple times in the same minute
-        // but guarantee it triggers even if the browser throttles the tab in the background!
-        if (currentTimeStr === alarmTime && (Date.now() - lastRungTimestamp > 60000)) {
-            lastRungTimestamp = Date.now();
-            isAlarmRinging = true;
-            alarmStatus.textContent = 'ALARM RINGING!';
-            alarmBtn.textContent = 'Stop Alarm';
-            clockWrapper.classList.add('alarm-active-ring');
-            
-            // Push system notification for background ringing
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("Wahab TickTock Timer", {
-                    body: `Your alarm for ${alarmTime} is ringing!`,
-                    icon: "clock-logo.png"
-                });
-            }
-            
-            playTone(alarmTone);
-        }
-    };
     // --- End Alarm Logic ---
 
     const updateClock = () => {
@@ -338,9 +346,6 @@ if (hoursElement) {
         monthElement.textContent = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(now);
         dayNumberElement.textContent = now.getDate();
         yearElement.textContent = now.getFullYear();
-        
-        // Trigger alarm check
-        checkAlarm(hours, minutes);
     };
 
     // Run once immediately to avoid 1-second delay, then set interval
@@ -417,6 +422,7 @@ if (swDisplay) {
     };
 
     const runSwInterval = () => {
+        if (swInterval) clearInterval(swInterval);
         swInterval = setInterval(() => {
             swElapsedTime = Date.now() - swStartTime;
             swDisplay.textContent = formatSW(swElapsedTime);
@@ -477,6 +483,7 @@ if (swDisplay) {
     };
 
     const runTimerInterval = () => {
+        if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             timerRemaining = Math.max(0, Math.ceil((timerTargetTime - Date.now()) / 1000));
             timerDisplay.textContent = formatTimer(timerRemaining);
@@ -556,9 +563,16 @@ if (swDisplay) {
     const sessionDots = document.getElementById('session-dots').children;
 
     const playStudyChime = () => {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
+        if (!window.globalAudioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) window.globalAudioCtx = new AudioContext();
+        }
+        if (window.globalAudioCtx && window.globalAudioCtx.state === 'suspended') {
+            window.globalAudioCtx.resume();
+        }
+        if (!window.globalAudioCtx) return;
+        
+        const ctx = window.globalAudioCtx;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
@@ -593,6 +607,7 @@ if (swDisplay) {
     };
 
     const runStudyInterval = () => {
+        if (studyInterval) clearInterval(studyInterval);
         studyInterval = setInterval(() => {
             studyRemaining = Math.max(0, Math.ceil((studyTargetTime - Date.now()) / 1000));
             studyDisplay.textContent = formatTimer(studyRemaining);
@@ -828,27 +843,128 @@ if (zenCanvas) {
         // Throttle generation so the screen isn't overwhelmed
         if (Math.random() > 0.92) createRipple(e);
     });
+    // Unified function to start/stop the effect smoothly
+    window.toggleZenMode = (isActive) => {
+        if (!zenCanvas) return;
+        if (isActive) {
+            document.body.classList.add('zen-mode-active');
+            zenCanvas.style.opacity = '1';
+            if (!rippleAnimationId) animateRipples();
+        } else {
+            document.body.classList.remove('zen-mode-active');
+            zenCanvas.style.opacity = '0';
+            
+            // Wait for 1.5s CSS fade transition before killing animation
+            setTimeout(() => {
+                if (!document.body.classList.contains('zen-mode-active')) {
+                    cancelAnimationFrame(rippleAnimationId);
+                    rippleAnimationId = null;
+                    rippleArray = [];
+                    if(zenCtx && zenCanvas) zenCtx.clearRect(0, 0, zenCanvas.width, zenCanvas.height);
+                }
+            }, 1500); 
+        }
+    };
 }
 
-// Unified function to start/stop the effect smoothly
-window.toggleZenMode = (isActive) => {
-    if (!zenCanvas) return;
-    if (isActive) {
-        document.body.classList.add('zen-mode-active');
-        zenCanvas.style.opacity = '1';
-        if (!rippleAnimationId) animateRipples();
-    } else {
-        document.body.classList.remove('zen-mode-active');
-        zenCanvas.style.opacity = '0';
+// ==========================================
+// 6. Global Alarm Checker
+// ==========================================
+setInterval(() => {
+    const aTime = localStorage.getItem('alarmTime');
+    const rDate = localStorage.getItem('lastRungDate');
+    
+    // Check if alarm is set and not already ringing
+    // We check window.isAlarmRingingGlobal to prevent multiple intervals
+    if (aTime && !window.isAlarmRingingGlobal) {
+        const now = new Date();
+        const hrs = now.getHours().toString().padStart(2, '0');
+        const mins = now.getMinutes().toString().padStart(2, '0');
+        const currentStr = `${hrs}:${mins}`;
+        const dStr = now.toDateString();
         
-        // Wait for 1.5s CSS fade transition before killing animation
-        setTimeout(() => {
-            if (!document.body.classList.contains('zen-mode-active')) {
-                cancelAnimationFrame(rippleAnimationId);
-                rippleAnimationId = null;
-                rippleArray = [];
-                if(zenCtx) zenCtx.clearRect(0, 0, zenCanvas.width, zenCanvas.height);
+        if (currentStr === aTime && dStr !== rDate) {
+            localStorage.setItem('lastRungDate', dStr);
+            window.isAlarmRingingGlobal = true;
+            
+            const status = document.getElementById('alarm-status');
+            const btn = document.getElementById('alarm-btn');
+            const cw = document.querySelector('.alarm-section') ? document.querySelector('.alarm-section').closest('.clock-wrapper') : null;
+            
+            if (status) status.textContent = 'ALARM RINGING!';
+            if (btn) btn.textContent = 'Stop Alarm';
+            if (cw) cw.classList.add('alarm-active-ring');
+            
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("Wahab TickTock Timer", { body: `Your alarm for ${aTime} is ringing!`, icon: "clock-logo.png" });
             }
-        }, 1500); 
+            
+            const aTone = localStorage.getItem('alarmTone') || 'beep';
+            
+            // Use existing playTone if on home page, else use global audio context
+            if (typeof window.playTone === 'function') {
+                window.playTone(aTone);
+            } else {
+                if (!window.globalAudioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) window.globalAudioCtx = new AudioContext();
+                }
+                if (window.globalAudioCtx && window.globalAudioCtx.state === 'suspended') {
+                    window.globalAudioCtx.resume();
+                }
+                
+                if (window.globalAudioCtx) {
+                    const ctx = window.globalAudioCtx;
+                    const triggerSound = () => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        if (aTone === 'beep') {
+                            osc.type = 'square';
+                            osc.frequency.setValueAtTime(880, ctx.currentTime);
+                            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.1);
+                        } else if (aTone === 'chime') {
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(1046.50, ctx.currentTime);
+                            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 1.5);
+                        }
+                    };
+                    triggerSound();
+                    window.globalAlarmAudioInterval = setInterval(triggerSound, aTone === 'beep' ? 500 : 2000);
+                }
+            }
+            
+            // Global stop button for all pages
+            if (!document.getElementById('global-stop-btn')) {
+                const gBtn = document.createElement('button');
+                gBtn.id = 'global-stop-btn';
+                gBtn.textContent = 'ALARM RINGING! CLICK TO STOP';
+                gBtn.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:999999;padding:20px 40px;font-size:24px;font-weight:bold;background:#ff4d4d;color:#fff;border:none;border-radius:10px;cursor:pointer;box-shadow:0 0 20px rgba(255,77,77,0.8);';
+                gBtn.addEventListener('click', () => { 
+                    window.isAlarmRingingGlobal = false;
+                    if (window.globalAlarmAudioInterval) clearInterval(window.globalAlarmAudioInterval);
+                    if (typeof window.stopTone === 'function') window.stopTone();
+                    gBtn.remove();
+                    if (btn) {
+                        btn.textContent = 'Clear Alarm';
+                        if (status) {
+                            const [h, m] = aTime.split(':');
+                            const dh = (parseInt(h) % 12) || 12;
+                            const p = parseInt(h) >= 12 ? 'PM' : 'AM';
+                            status.textContent = `Alarm set for ${dh}:${m} ${p}`;
+                        }
+                    }
+                    if (cw) cw.classList.remove('alarm-active-ring');
+                });
+                document.body.appendChild(gBtn);
+            }
+        }
     }
-};
+}, 1000);
